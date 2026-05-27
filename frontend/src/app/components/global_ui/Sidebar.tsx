@@ -11,6 +11,7 @@ import {
   X,
   CreditCard,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -20,9 +21,24 @@ import {
   selectWalletStatus,
   selectWalletNetwork,
 } from "../../stores/useWalletStore";
+import { useUserStore } from "../../stores/useUserStore";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+function getTokenRole(token: string | null): string | undefined {
+  if (!token || typeof window === "undefined") return undefined;
+
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return undefined;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return (JSON.parse(window.atob(padded)) as { role?: string }).role;
+  } catch {
+    return undefined;
+  }
 }
 
 interface SidebarProps {
@@ -37,7 +53,10 @@ export function Sidebar({ onClose, className }: SidebarProps) {
 
   const status = useWalletStore(selectWalletStatus);
   const network = useWalletStore(selectWalletNetwork);
+  const user = useUserStore((state) => state.user);
+  const token = useUserStore((state) => state.authToken);
   const isConnected = status === "connected";
+  const isAdmin = (user?.role ?? getTokenRole(token)) === "admin";
 
   const navItems = [
     { name: t("home"), href: `/${locale}`, icon: LayoutDashboard },
@@ -45,6 +64,9 @@ export function Sidebar({ onClose, className }: SidebarProps) {
     { name: "Lend", href: `/${locale}/lend`, icon: PiggyBank },
     { name: t("activity"), href: `/${locale}/activity`, icon: Clock },
     { name: "Wallet", href: `/${locale}/wallet`, icon: CreditCard },
+    ...(isAdmin
+      ? [{ name: t("adminDisputes"), href: `/${locale}/admin/disputes`, icon: ShieldAlert }]
+      : []),
   ];
 
   return (

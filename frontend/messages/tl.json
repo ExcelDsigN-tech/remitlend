@@ -60,7 +60,8 @@
     "loans": "Mga Loan",
     "repay": "Bayaran",
     "dashboard": "Dashboard",
-    "activity": "Aktibidad"
+    "activity": "Aktibidad",
+    "adminDisputes": "Mga Dispute"
   },
   "Loans": {
     "title": "Mga Loan",
@@ -128,30 +129,61 @@
     "viewDetails": "Tingnan ang Mga Detalye",
     "details": "Mga Detalye"
   },
-  "RecentTransactions": {
-    "open": "Buksan ang recent transactions",
-    "close": "Isara ang recent transactions",
-    "title": "Recent transactions",
-    "description": "Kopyahin ang hashes at buksan ang Stellar Expert links.",
-    "loading": "Naglo-load ng recent transactions...",
-    "empty": "Wala pang submitted transactions.",
-    "error": "Hindi ma-load ang recent transactions."
-  },
-  "Governance": {
-    "title": "Governance console",
-    "description": "Read-only view ng pending multisig admin-transfer proposals.",
-    "forbidden": "Kailangan ng admin access para makita ang governance proposals.",
-    "loading": "Naglo-load ng governance status...",
-    "error": "Hindi ma-load ang governance status.",
-    "empty": "Walang pending governance proposal.",
-    "currentAdmin": "Current admin",
-    "targetContract": "Target contract",
-    "pendingProposal": "Pending proposal",
-    "approvals": "approvals",
-    "timeToExecutable": "Time to executable",
-    "expiresAt": "Expires at",
-    "approved": "Approved",
-    "pending": "Pending"
+  "AdminDisputes": {
+    "eyebrow": "Admin Review",
+    "title": "Mga Dispute",
+    "description": "Suriin ang bukas na default disputes at itala ang pinal na resolusyon.",
+    "checkingAccess": "Sinusuri ang admin access...",
+    "refresh": "I-refresh",
+    "loading": "Naglo-load ng disputes...",
+    "review": "Suriin",
+    "empty": {
+      "title": "Walang bukas na dispute",
+      "description": "Lalabas dito ang bagong borrower disputes kapag naisumite."
+    },
+    "error": {
+      "title": "Hindi ma-load ang disputes",
+      "description": "Suriin ang iyong admin session at subukan muli."
+    },
+    "table": {
+      "borrower": "Borrower",
+      "loanId": "Loan ID",
+      "reason": "Buod ng dahilan",
+      "submitted": "Isinumite",
+      "action": "Aksyon"
+    },
+    "detail": {
+      "title": "Dispute #{id}",
+      "submitted": "Isinumite ni {borrower} noong {date}",
+      "loading": "Naglo-load ng dispute...",
+      "back": "Bumalik sa disputes",
+      "error": "Hindi ma-load ang dispute na ito.",
+      "reason": "Dahilan ng borrower",
+      "noteLabel": "Resolution note",
+      "notePlaceholder": "Ipaliwanag kung bakit kinukumpirma o binabaligtad ang default.",
+      "noteHelp": "Maglagay ng hindi bababa sa 5 character.",
+      "confirmDefault": "Kumpirmahin ang default",
+      "reverseDefault": "Baligtarin ang default",
+      "loan": {
+        "title": "Buod ng kaugnay na loan",
+        "openLoan": "Buksan ang loan",
+        "principal": "Principal",
+        "totalOwed": "Kabuuang utang",
+        "totalRepaid": "Kabuuang nabayaran",
+        "status": "Status",
+        "nextPayment": "Susunod na bayad"
+      },
+      "modal": {
+        "confirmTitle": "Kumpirmahin ang default na ito?",
+        "confirmDescription": "Mananatiling default ang loan at ise-save ang resolution note.",
+        "reverseTitle": "Baligtarin ang default na ito?",
+        "reverseDescription": "Binabaligtad nito ang default outcome at ise-save ang resolution note.",
+        "close": "Isara",
+        "cancel": "Kanselahin",
+        "submit": "Isumite",
+        "submitting": "Isinusumite..."
+      }
+    }
   },
   "Settings": {
     "language": "Wika",

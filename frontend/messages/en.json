@@ -60,7 +60,8 @@
     "loans": "Loans",
     "repay": "Repay",
     "dashboard": "Dashboard",
-    "activity": "Activity"
+    "activity": "Activity",
+    "adminDisputes": "Disputes"
   },
   "Loans": {
     "title": "Loans",
@@ -128,30 +129,61 @@
     "viewDetails": "View Details",
     "details": "Details"
   },
-  "RecentTransactions": {
-    "open": "Open recent transactions",
-    "close": "Close recent transactions",
-    "title": "Recent transactions",
-    "description": "Copy hashes and reopen Stellar Expert links.",
-    "loading": "Loading recent transactions...",
-    "empty": "No submitted transactions yet.",
-    "error": "Unable to load recent transactions."
-  },
-  "Governance": {
-    "title": "Governance console",
-    "description": "Read-only view of pending multisig admin-transfer proposals.",
-    "forbidden": "Admin access is required to view governance proposals.",
-    "loading": "Loading governance status...",
-    "error": "Unable to load governance status.",
-    "empty": "No pending governance proposal.",
-    "currentAdmin": "Current admin",
-    "targetContract": "Target contract",
-    "pendingProposal": "Pending proposal",
-    "approvals": "approvals",
-    "timeToExecutable": "Time to executable",
-    "expiresAt": "Expires at",
-    "approved": "Approved",
-    "pending": "Pending"
+  "AdminDisputes": {
+    "eyebrow": "Admin Review",
+    "title": "Disputes",
+    "description": "Review open default disputes and record the final resolution.",
+    "checkingAccess": "Checking admin access...",
+    "refresh": "Refresh",
+    "loading": "Loading disputes...",
+    "review": "Review",
+    "empty": {
+      "title": "No open disputes",
+      "description": "New borrower disputes will appear here as they are filed."
+    },
+    "error": {
+      "title": "Unable to load disputes",
+      "description": "Check your admin session and try again."
+    },
+    "table": {
+      "borrower": "Borrower",
+      "loanId": "Loan ID",
+      "reason": "Reason summary",
+      "submitted": "Submitted",
+      "action": "Action"
+    },
+    "detail": {
+      "title": "Dispute #{id}",
+      "submitted": "Filed by {borrower} on {date}",
+      "loading": "Loading dispute...",
+      "back": "Back to disputes",
+      "error": "This dispute could not be loaded.",
+      "reason": "Borrower's reason",
+      "noteLabel": "Resolution note",
+      "notePlaceholder": "Explain why the default is being confirmed or reversed.",
+      "noteHelp": "Enter at least 5 characters.",
+      "confirmDefault": "Confirm default",
+      "reverseDefault": "Reverse default",
+      "loan": {
+        "title": "Linked loan summary",
+        "openLoan": "Open loan",
+        "principal": "Principal",
+        "totalOwed": "Total owed",
+        "totalRepaid": "Total repaid",
+        "status": "Status",
+        "nextPayment": "Next payment"
+      },
+      "modal": {
+        "confirmTitle": "Confirm this default?",
+        "confirmDescription": "This keeps the loan in default and stores the resolution note.",
+        "reverseTitle": "Reverse this default?",
+        "reverseDescription": "This reverses the default outcome and stores the resolution note.",
+        "close": "Close",
+        "cancel": "Cancel",
+        "submit": "Submit",
+        "submitting": "Submitting..."
+      }
+    }
   },
   "Settings": {
     "language": "Language",

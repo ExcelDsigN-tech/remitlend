@@ -24,6 +24,7 @@ export interface User {
   email: string;
   walletAddress?: string;
   role?: "admin" | "borrower" | "lender";
+  scopes?: string[];
   kycVerified: boolean;
   /** ISO 8601 timestamp of when the session was established */
   sessionStartedAt?: string;

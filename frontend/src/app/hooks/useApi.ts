@@ -53,11 +53,12 @@ export const queryKeys = {
   notifications: {
     all: () => ["notifications"] as const,
   },
-  transactions: {
-    mine: (params: Record<string, unknown>) => ["transactions", "mine", params] as const,
+  adminDisputes: {
+    all: () => ["admin", "disputes"] as const,
+    detail: (id: string) => ["admin", "disputes", id] as const,
   },
-  governance: {
-    pending: () => ["admin", "governance", "pending"] as const,
+  auth: {
+    verify: () => ["auth", "verify"] as const,
   },
   borrowerLoans: {
     byAddress: (address: string) => ["borrowerLoans", address] as const,
@@ -146,6 +147,15 @@ export interface UserProfile {
   kycVerified: boolean;
 }
 
+export type UserRole = "admin" | "borrower" | "lender";
+
+export interface AuthSession {
+  publicKey?: string;
+  role?: UserRole;
+  scopes?: string[];
+  valid: boolean;
+}
+
 export interface UserBalance {
   available: number;
   locked: number;
@@ -211,6 +221,109 @@ export interface LoanDetails {
   events: LoanEvent[];
   lateFees?: number;
   collateralLocked?: number;
+}
+
+export interface AdminDisputeLoanSummary {
+  loanId: number;
+  principal?: number;
+  accruedInterest?: number;
+  totalRepaid?: number;
+  totalOwed?: number;
+  interestRate?: number;
+  status?: LoanStatus | "disputed";
+  nextPaymentDeadline?: string;
+  approvedAt?: string;
+}
+
+export interface AdminDispute {
+  id: string;
+  loanId: number;
+  borrower: string;
+  reason: string;
+  status: "open" | "resolved" | "rejected";
+  createdAt: string;
+  submittedAt?: string;
+  resolution?: string;
+  resolvedAt?: string;
+  loan?: AdminDisputeLoanSummary;
+}
+
+type RawAdminDispute = Record<string, unknown>;
+
+function stringFrom(value: unknown, fallback: string | undefined = ""): string | undefined {
+  return typeof value === "string" ? value : fallback;
+}
+
+function numberFrom(value: unknown, fallback = 0): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeDispute(row: RawAdminDispute): AdminDispute {
+  const loan = row.loan;
+  const normalizedLoan =
+    loan && typeof loan === "object"
+      ? ({
+          loanId: numberFrom((loan as RawAdminDispute).loanId ?? (loan as RawAdminDispute).loan_id),
+          principal:
+            (loan as RawAdminDispute).principal !== undefined
+              ? numberFrom((loan as RawAdminDispute).principal)
+              : undefined,
+          accruedInterest:
+            (loan as RawAdminDispute).accruedInterest !== undefined ||
+            (loan as RawAdminDispute).accrued_interest !== undefined
+              ? numberFrom(
+                  (loan as RawAdminDispute).accruedInterest ??
+                    (loan as RawAdminDispute).accrued_interest,
+                )
+              : undefined,
+          totalRepaid:
+            (loan as RawAdminDispute).totalRepaid !== undefined ||
+            (loan as RawAdminDispute).total_repaid !== undefined
+              ? numberFrom(
+                  (loan as RawAdminDispute).totalRepaid ?? (loan as RawAdminDispute).total_repaid,
+                )
+              : undefined,
+          totalOwed:
+            (loan as RawAdminDispute).totalOwed !== undefined ||
+            (loan as RawAdminDispute).total_owed !== undefined
+              ? numberFrom(
+                  (loan as RawAdminDispute).totalOwed ?? (loan as RawAdminDispute).total_owed,
+                )
+              : undefined,
+          interestRate:
+            (loan as RawAdminDispute).interestRate !== undefined ||
+            (loan as RawAdminDispute).interest_rate !== undefined
+              ? numberFrom(
+                  (loan as RawAdminDispute).interestRate ?? (loan as RawAdminDispute).interest_rate,
+                )
+              : undefined,
+          status: stringFrom((loan as RawAdminDispute).status) as AdminDisputeLoanSummary["status"],
+          nextPaymentDeadline: stringFrom(
+            (loan as RawAdminDispute).nextPaymentDeadline ??
+              (loan as RawAdminDispute).next_payment_deadline,
+            undefined,
+          ),
+          approvedAt: stringFrom(
+            (loan as RawAdminDispute).approvedAt ?? (loan as RawAdminDispute).approved_at,
+            undefined,
+          ),
+        } satisfies AdminDisputeLoanSummary)
+      : undefined;
+
+  const loanId = numberFrom(row.loanId ?? row.loan_id ?? normalizedLoan?.loanId);
+  return {
+    id: String(row.id ?? ""),
+    loanId,
+    borrower: stringFrom(row.borrower ?? row.borrowerAddress ?? row.borrower_address) ?? "",
+    reason: stringFrom(row.reason) ?? "",
+    status: stringFrom(row.status, "open") as AdminDispute["status"],
+    createdAt: stringFrom(row.createdAt ?? row.created_at ?? row.submittedAt ?? row.submitted_at) ?? "",
+    submittedAt: stringFrom(row.submittedAt ?? row.submitted_at, undefined),
+    resolution: stringFrom(row.resolution, undefined),
+    resolvedAt: stringFrom(row.resolvedAt ?? row.resolved_at, undefined),
+    loan: normalizedLoan ?? { loanId },
+  };
 }
 
 export interface LoanAmortizationScheduleRow {
@@ -1020,6 +1133,88 @@ export function useMarkAllNotificationsRead() {
     mutationFn: () => apiFetch<void>("/notifications/mark-all-read", { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all() });
+    },
+  });
+}
+
+export function useVerifySession(
+  options?: Omit<UseQueryOptions<AuthSession>, "queryKey" | "queryFn">,
+) {
+  return useQuery<AuthSession>({
+    queryKey: queryKeys.auth.verify(),
+    queryFn: async () => {
+      const response = await apiFetch<{ success: boolean; data: AuthSession }>("/auth/verify");
+      return response.data;
+    },
+    retry: false,
+    ...options,
+  });
+}
+
+export function useAdminDisputes(
+  options?: Omit<UseQueryOptions<AdminDispute[]>, "queryKey" | "queryFn">,
+) {
+  return useQuery<AdminDispute[]>({
+    queryKey: queryKeys.adminDisputes.all(),
+    queryFn: async () => {
+      const response = await apiFetch<
+        | { success: boolean; disputes: RawAdminDispute[] }
+        | { success: boolean; data: RawAdminDispute[] }
+        | RawAdminDispute[]
+      >("/admin/disputes");
+
+      const disputes = Array.isArray(response)
+        ? response
+        : "disputes" in response
+          ? response.disputes
+          : response.data;
+
+      return disputes.map(normalizeDispute);
+    },
+    refetchInterval: 60_000,
+    ...options,
+  });
+}
+
+export function useAdminDispute(
+  id: string | undefined,
+  options?: Omit<UseQueryOptions<AdminDispute>, "queryKey" | "queryFn">,
+) {
+  return useQuery<AdminDispute>({
+    queryKey: queryKeys.adminDisputes.detail(id ?? ""),
+    queryFn: async () => {
+      const response = await apiFetch<
+        | { success: boolean; dispute: RawAdminDispute }
+        | { success: boolean; data: RawAdminDispute }
+        | RawAdminDispute
+      >(`/admin/disputes/${id}`);
+
+      const dispute = (
+        "dispute" in response ? response.dispute : "data" in response ? response.data : response
+      ) as RawAdminDispute;
+      return normalizeDispute(dispute);
+    },
+    enabled: !!id,
+    ...options,
+  });
+}
+
+export function useResolveAdminDispute() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { success: boolean; message?: string },
+    Error,
+    { id: string; action: "resolve" | "reject"; note: string }
+  >({
+    mutationFn: ({ id, action, note }) =>
+      apiFetch<{ success: boolean; message?: string }>(`/admin/disputes/${id}/${action}`, {
+        method: "POST",
+        body: JSON.stringify({ note, resolution: note }),
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminDisputes.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminDisputes.detail(variables.id) });
     },
   });
 }

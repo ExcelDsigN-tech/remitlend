@@ -60,7 +60,8 @@
     "loans": "Préstamos",
     "repay": "Repagar",
     "dashboard": "Tablero",
-    "activity": "Actividad"
+    "activity": "Actividad",
+    "adminDisputes": "Disputas"
   },
   "Loans": {
     "title": "Préstamos",
@@ -128,30 +129,61 @@
     "viewDetails": "Ver detalles",
     "details": "Detalles"
   },
-  "RecentTransactions": {
-    "open": "Abrir transacciones recientes",
-    "close": "Cerrar transacciones recientes",
-    "title": "Transacciones recientes",
-    "description": "Copia hashes y abre enlaces de Stellar Expert.",
-    "loading": "Cargando transacciones recientes...",
-    "empty": "Aún no hay transacciones enviadas.",
-    "error": "No se pudieron cargar las transacciones recientes."
-  },
-  "Governance": {
-    "title": "Consola de gobernanza",
-    "description": "Vista de solo lectura de propuestas multisig pendientes.",
-    "forbidden": "Se requiere acceso de administrador para ver propuestas.",
-    "loading": "Cargando estado de gobernanza...",
-    "error": "No se pudo cargar el estado de gobernanza.",
-    "empty": "No hay propuesta de gobernanza pendiente.",
-    "currentAdmin": "Administrador actual",
-    "targetContract": "Contrato objetivo",
-    "pendingProposal": "Propuesta pendiente",
-    "approvals": "aprobaciones",
-    "timeToExecutable": "Tiempo para ejecutar",
-    "expiresAt": "Expira en",
-    "approved": "Aprobado",
-    "pending": "Pendiente"
+  "AdminDisputes": {
+    "eyebrow": "Consola admin",
+    "title": "Disputas",
+    "description": "Revise disputas abiertas de incumplimiento y registre la resolucion final.",
+    "checkingAccess": "Comprobando acceso de admin...",
+    "refresh": "Actualizar",
+    "loading": "Cargando disputas...",
+    "review": "Revisar",
+    "empty": {
+      "title": "No hay disputas abiertas",
+      "description": "Las nuevas disputas de prestatarios apareceran aqui cuando se envien."
+    },
+    "error": {
+      "title": "No se pudieron cargar las disputas",
+      "description": "Revise su sesion de admin e intente de nuevo."
+    },
+    "table": {
+      "borrower": "Prestatario",
+      "loanId": "ID del prestamo",
+      "reason": "Resumen de la razon",
+      "submitted": "Enviado",
+      "action": "Accion"
+    },
+    "detail": {
+      "title": "Disputa #{id}",
+      "submitted": "Enviada por {borrower} el {date}",
+      "loading": "Cargando disputa...",
+      "back": "Volver a disputas",
+      "error": "No se pudo cargar esta disputa.",
+      "reason": "Razon del prestatario",
+      "noteLabel": "Nota de resolucion",
+      "notePlaceholder": "Explique por que se confirma o revierte el incumplimiento.",
+      "noteHelp": "Ingrese al menos 5 caracteres.",
+      "confirmDefault": "Confirmar incumplimiento",
+      "reverseDefault": "Revertir incumplimiento",
+      "loan": {
+        "title": "Resumen del prestamo vinculado",
+        "openLoan": "Abrir prestamo",
+        "principal": "Principal",
+        "totalOwed": "Total adeudado",
+        "totalRepaid": "Total pagado",
+        "status": "Estado",
+        "nextPayment": "Proximo pago"
+      },
+      "modal": {
+        "confirmTitle": "Confirmar este incumplimiento?",
+        "confirmDescription": "Esto mantiene el prestamo en incumplimiento y guarda la nota de resolucion.",
+        "reverseTitle": "Revertir este incumplimiento?",
+        "reverseDescription": "Esto revierte el resultado de incumplimiento y guarda la nota de resolucion.",
+        "close": "Cerrar",
+        "cancel": "Cancelar",
+        "submit": "Enviar",
+        "submitting": "Enviando..."
+      }
+    }
   },
   "Settings": {
     "language": "Idioma",

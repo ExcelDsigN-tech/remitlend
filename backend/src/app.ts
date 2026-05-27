@@ -129,6 +129,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/events", eventRoutes);
 
+app.use("/api/v1/pool", poolRoutes);
+app.use("/api/v1/notifications", notificationsRoutes);
+app.use("/api/v1/events", eventRoutes);
+
 // ── Diagnostic / Test Routes ─────────────────────────────────────
 // Only exposed in test environment to verify centralized error handling.
 if (process.env.NODE_ENV === "test") {

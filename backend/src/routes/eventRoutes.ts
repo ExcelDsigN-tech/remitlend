@@ -74,6 +74,6 @@ router.get("/stream", requireJwtAuth, streamEvents);
  *       401:
  *         description: Missing or invalid API key
  */
-router.get("/status", requireApiKey, getEventStreamStatus);
+router.get("/status", requireApiKey(), getEventStreamStatus);
 
 export default router;

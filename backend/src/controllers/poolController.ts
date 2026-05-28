@@ -10,6 +10,10 @@ import {
   normalizeYieldHistoryDays,
 } from "../services/yieldHistoryService.js";
 import logger from "../utils/logger.js";
+import {
+  invalidateOnDeposit,
+  invalidateOnWithdraw,
+} from "../utils/cacheKeys.js";
 
 const ANNUAL_APY = 0.08; // 8% annual yield paid to depositors
 
@@ -226,6 +230,9 @@ export const depositToPool = asyncHandler(
       amount,
     );
 
+    // Invalidate stale pool stats cache now that a deposit has been initiated
+    await invalidateOnDeposit(depositorPublicKey);
+
     logger.info("Deposit transaction built", {
       depositor: depositorPublicKey,
       token,
@@ -270,6 +277,9 @@ export const withdrawFromPool = asyncHandler(
       token,
       amount,
     );
+
+    // Invalidate stale pool stats cache now that a withdrawal has been initiated
+    await invalidateOnWithdraw(depositorPublicKey);
 
     logger.info("Withdraw transaction built", {
       depositor: depositorPublicKey,

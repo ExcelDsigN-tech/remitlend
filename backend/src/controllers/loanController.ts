@@ -16,6 +16,10 @@ import {
 import logger from "../utils/logger.js";
 import { cacheService } from "../services/cacheService.js";
 import { notificationService } from "../services/notificationService.js";
+import {
+  invalidateOnRepay,
+  invalidateOnLoanRequest,
+} from "../utils/cacheKeys.js";
 
 // ─── Test/Dev Only ────────────────────────────────────────────────────────────
 
@@ -274,6 +278,19 @@ export const getBorrowerLoans = asyncHandler(
     const { limit, cursor, sort, status, dateRange, amountRange } =
       parseCursorQueryParams(req);
 
+    // `from` and `to` are validated by the Zod middleware; merge into dateRange
+    const fromParam =
+      typeof req.query.from === "string" ? new Date(req.query.from) : null;
+    const toParam =
+      typeof req.query.to === "string" ? new Date(req.query.to) : null;
+    const effectiveDateRange =
+      fromParam !== null || toParam !== null
+        ? {
+            start: fromParam ?? new Date(0),
+            end: toParam ?? new Date(),
+          }
+        : dateRange;
+
     const currentLedger = await getLatestLedger();
 
     const loansQuery = `
@@ -347,8 +364,8 @@ export const getBorrowerLoans = asyncHandler(
       status && status !== "all" ? status : null,
       amountRange?.min ?? null,
       amountRange?.max ?? null,
-      dateRange?.start ?? null,
-      dateRange?.end ?? null,
+      effectiveDateRange?.start ?? null,
+      effectiveDateRange?.end ?? null,
       cursorValue,
       limit + 1,
     ];
@@ -685,6 +702,9 @@ export const requestLoan = asyncHandler(async (req: Request, res: Response) => {
   // Cache for 60 seconds to prevent sequence number collisions from rapid requests
   await cacheService.set(cacheKey, result, 60);
 
+  // Invalidate stale read-cache keys now that a loan request has been built
+  await invalidateOnLoanRequest(borrowerPublicKey);
+
   logger.info("Loan request transaction built", {
     borrower: borrowerPublicKey,
     amount,
@@ -754,6 +774,9 @@ export const repayLoan = asyncHandler(async (req: Request, res: Response) => {
 
   // Cache for 60 seconds
   await cacheService.set(cacheKey, result, 60);
+
+  // Invalidate stale read-cache keys now that a repayment has been initiated
+  await invalidateOnRepay(borrowerPublicKey, loanIdNum);
 
   logger.info("Repay transaction built", {
     borrower: borrowerPublicKey,

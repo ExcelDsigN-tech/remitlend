@@ -30,6 +30,7 @@ import {
   validate,
   validateBody,
   validateParams,
+  validateQuery,
 } from "../middleware/validation.js";
 import { idempotencyMiddleware } from "../middleware/idempotency.js";
 import { borrowerParamSchema } from "../schemas/stellarSchemas.js";
@@ -44,6 +45,7 @@ import {
   refinanceLoanSchema,
   extendLoanSchema,
   liquidateLoanSchema,
+  borrowerLoansQuerySchema,
 } from "../schemas/loanSchemas.js";
 
 const router = Router();
@@ -136,8 +138,9 @@ router.post(
  *   get:
  *     summary: Get loans for a specific borrower
  *     description: >
- *       Returns loans for the authenticated wallet only; `borrower` must match
- *       the JWT Stellar public key.
+ *       Returns cursor-paginated loans for the authenticated wallet.
+ *       `borrower` must match the JWT Stellar public key.
+ *       Supports filtering by `status` and an approved-at date range (`from` / `to`).
  *     tags: [Loans]
  *     security:
  *       - BearerAuth: []
@@ -152,8 +155,33 @@ router.post(
  *         name: status
  *         schema:
  *           type: string
- *           enum: [active, repaid, all]
- *           default: active
+ *           enum: [active, repaid, defaulted, liquidated, pending, all]
+ *         description: Filter by loan status (omit or "all" to return every status)
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: ISO-8601 start of approved_at date range (inclusive)
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         description: ISO-8601 end of approved_at date range (inclusive)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 50
+ *         description: Number of results per page
+ *       - in: query
+ *         name: cursor
+ *         schema:
+ *           type: string
+ *         description: Opaque cursor from the previous response for pagination
  *     responses:
  *       200:
  *         description: Loans retrieved successfully
@@ -161,6 +189,8 @@ router.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/BorrowerLoansResponse'
+ *       400:
+ *         description: Invalid query parameters
  *       401:
  *         description: Missing or invalid Bearer token
  *       403:
@@ -172,6 +202,7 @@ router.get(
   requireScopes("read:loans"),
   requireWalletOwnership,
   validate(borrowerParamSchema),
+  validateQuery(borrowerLoansQuerySchema),
   getBorrowerLoans,
 );
 

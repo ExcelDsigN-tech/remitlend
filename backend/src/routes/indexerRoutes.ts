@@ -152,7 +152,7 @@ router.get(
  *       401:
  *         description: Missing or invalid API key
  */
-router.get("/events/recent", requireApiKey, getRecentEvents);
+router.get("/events/recent", requireApiKey(), getRecentEvents);
 
 /**
  * @swagger
@@ -172,7 +172,7 @@ router.get("/events/recent", requireApiKey, getRecentEvents);
  *       401:
  *         description: Missing or invalid API key
  */
-router.get("/webhooks", requireApiKey, listWebhookSubscriptions);
+router.get("/webhooks", requireApiKey(), listWebhookSubscriptions);
 
 /**
  * @swagger
@@ -209,7 +209,7 @@ router.get("/webhooks", requireApiKey, listWebhookSubscriptions);
  *       401:
  *         description: Missing or invalid API key
  */
-router.post("/webhooks", requireApiKey, createWebhookSubscription);
+router.post("/webhooks", requireApiKey(), createWebhookSubscription);
 
 /**
  * @swagger
@@ -237,7 +237,7 @@ router.post("/webhooks", requireApiKey, createWebhookSubscription);
  */
 router.delete(
   "/webhooks/:subscriptionId",
-  requireApiKey,
+  requireApiKey(),
   deleteWebhookSubscription,
 );
 

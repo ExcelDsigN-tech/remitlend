@@ -206,7 +206,7 @@ router.get(
  */
 router.post(
   "/update",
-  requireApiKey,
+  requireApiKey(),
   scoreUpdateRateLimit,
   validate(updateScoreSchema),
   updateScore,

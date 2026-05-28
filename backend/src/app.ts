@@ -163,7 +163,118 @@ app.get(
   }),
 );
 
-app.get("/metrics", requireApiKey, asyncHandler(metricsHandler));
+app.get("/metrics", requireApiKey(), asyncHandler(metricsHandler));
+
+/**
+ * GET /health/deep
+ * Exercises DB, Redis, Stellar RPC, and indexer lag.
+ * Returns 200 when all green, 503 when any dependency is down,
+ * 200 with status "degraded" when indexer lag exceeds INDEXER_HEALTH_LAG_LIMIT.
+ */
+app.get(
+  "/health/deep",
+  asyncHandler(async (_req: Request, res: Response) => {
+    const TIMEOUT_MS = 2000;
+    const INDEXER_HEALTH_LAG_LIMIT = Number.parseInt(
+      process.env.INDEXER_HEALTH_LAG_LIMIT ?? "100",
+      10,
+    );
+
+    const withTimeout = <T>(
+      promise: Promise<T>,
+      fallback: T,
+    ): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((resolve) =>
+          setTimeout(() => resolve(fallback), TIMEOUT_MS),
+        ),
+      ]);
+
+    const [dbResult, redisResult, rpcResult, indexerResult] =
+      await Promise.allSettled([
+        withTimeout(
+          pool
+            .query("SELECT 1")
+            .then(() => ({ status: "ok" as const }))
+            .catch(() => ({ status: "down" as const })),
+          { status: "down" as const },
+        ),
+        withTimeout(
+          cacheService.ping().then((r) => ({
+            status: r === "ok" ? ("ok" as const) : ("down" as const),
+          })),
+          { status: "down" as const },
+        ),
+        withTimeout(
+          sorobanService.healthCheck().then((r) => ({
+            status: r.connected ? ("ok" as const) : ("down" as const),
+            latestLedger: r.latestLedger,
+          })),
+          { status: "down" as const, latestLedger: undefined },
+        ),
+        withTimeout(
+          pool
+            .query(
+              "SELECT last_indexed_ledger FROM indexer_state ORDER BY id DESC LIMIT 1",
+            )
+            .then((r) => ({
+              lastIndexedLedger: r.rows[0]?.last_indexed_ledger ?? null,
+            }))
+            .catch(() => ({ lastIndexedLedger: null })),
+          { lastIndexedLedger: null },
+        ),
+      ]);
+
+    const db =
+      dbResult.status === "fulfilled" ? dbResult.value.status : "down";
+    const redis =
+      redisResult.status === "fulfilled" ? redisResult.value.status : "down";
+    const rpcData =
+      rpcResult.status === "fulfilled"
+        ? rpcResult.value
+        : { status: "down" as const, latestLedger: undefined };
+    const stellarRpc = rpcData.status;
+    const rpcLedger = (rpcData as { latestLedger?: number }).latestLedger;
+
+    const indexerData =
+      indexerResult.status === "fulfilled"
+        ? indexerResult.value
+        : { lastIndexedLedger: null };
+    const lagLedgers =
+      rpcLedger != null && indexerData.lastIndexedLedger != null
+        ? rpcLedger - Number(indexerData.lastIndexedLedger)
+        : null;
+    const indexerStatus =
+      lagLedgers === null
+        ? ("down" as const)
+        : lagLedgers > INDEXER_HEALTH_LAG_LIMIT
+          ? ("degraded" as const)
+          : ("ok" as const);
+
+    const anyDown =
+      db === "down" || redis === "down" || stellarRpc === "down";
+    const overallStatus = anyDown
+      ? "down"
+      : indexerStatus === "degraded"
+        ? "degraded"
+        : "ok";
+
+    res.status(anyDown ? 503 : 200).json({
+      status: overallStatus,
+      checks: {
+        db,
+        redis,
+        stellarRpc,
+        indexer: {
+          status: indexerStatus,
+          lagLedgers,
+        },
+      },
+      timestamp: Date.now(),
+    });
+  }),
+);
 
 // Legacy routes (deprecated, maintained for backward compatibility)
 app.use("/api", simulationRoutes);

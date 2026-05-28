@@ -2,10 +2,11 @@ import { scValToNative, xdr } from "@stellar/stellar-sdk";
 import { query } from "../db/connection.js";
 
 export const SHARE_PRICE_SCALE = 1_000_000;
-const ALLOWED_DAY_RANGES = [7, 30, 90] as const;
+export const YIELD_HISTORY_ALLOWED_DAYS = [7, 30, 90] as const;
+export const YIELD_HISTORY_DEFAULT_DAYS = 30 as const;
 const MAX_POINTS = 90;
 
-export type YieldHistoryDayRange = (typeof ALLOWED_DAY_RANGES)[number];
+export type YieldHistoryDayRange = (typeof YIELD_HISTORY_ALLOWED_DAYS)[number];
 
 export interface YieldHistoryPoint {
   timestamp: string;
@@ -141,10 +142,10 @@ function computeApy(
 export function normalizeYieldHistoryDays(
   days: number | undefined,
 ): YieldHistoryDayRange {
-  if (days === 7 || days === 30 || days === 90) {
-    return days;
+  if ((YIELD_HISTORY_ALLOWED_DAYS as readonly number[]).includes(days as number)) {
+    return days as YieldHistoryDayRange;
   }
-  return 30;
+  return YIELD_HISTORY_DEFAULT_DAYS;
 }
 
 export async function buildDepositorYieldHistory(
@@ -272,4 +273,4 @@ export async function buildDepositorYieldHistory(
   );
 }
 
-export { ALLOWED_DAY_RANGES, MAX_POINTS, computeApy };
+export { MAX_POINTS, computeApy };

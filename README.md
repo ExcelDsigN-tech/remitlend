@@ -47,7 +47,7 @@ Both endpoints are gated to non-production environments (`NODE_ENV !== "producti
 ## 🛠 Tech Stack
 
 - **Blockchain**: [Stellar](https://stellar.org) (Soroban Smart Contracts)
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
 - **Backend**: Node.js, Express, TypeScript, Jest
 - **Wallet Integration**: [Stellar Wallet Kit](https://github.com/stellar/stellar-wallet-kit) (Freighter)
 
@@ -219,4 +219,4 @@ See [docs/ENVIRONMENT.md](docs/ENVIRONMENT.md) for a full reference of all envir
 
 ## 📄 License
 
-This project is licensed under the ISC License. See the `LICENSE` file for details..
+This project is licensed under the ISC License. See the `LICENSE` file for details.

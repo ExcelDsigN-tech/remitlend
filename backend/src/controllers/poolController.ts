@@ -33,7 +33,7 @@ function safeFloat(value: unknown, fallback = 0): number {
  */
 export const getPoolStats = asyncHandler(
   async (_req: Request, res: Response) => {
-    const [depositResult, loanResult] = await Promise.all([
+    const [depositResult, loanResult, withdrawalCooldownLedgers] = await Promise.all([
       query(`
       SELECT
         COALESCE(SUM(CASE WHEN event_type = 'Deposit' THEN CAST(amount AS NUMERIC) ELSE 0 END), 0)
@@ -53,6 +53,7 @@ export const getPoolStats = asyncHandler(
       FROM contract_events
       WHERE event_type IN ('LoanApproved', 'LoanRepaid')
     `),
+      sorobanService.getWithdrawalCooldownLedgers().catch(() => 0),
     ]);
 
     const totalDeposits = safeFloat(depositResult.rows[0]?.total_deposits);
@@ -73,6 +74,7 @@ export const getPoolStats = asyncHandler(
         apy: ANNUAL_APY,
         activeLoansCount,
         poolTokenAddress: process.env.POOL_TOKEN_ADDRESS,
+        withdrawalCooldownLedgers,
       },
     });
   },
@@ -93,7 +95,8 @@ export const getDepositorPortfolio = asyncHandler(
         COALESCE(SUM(CASE WHEN event_type = 'Deposit' THEN CAST(amount AS NUMERIC) ELSE 0 END), 0)
           - COALESCE(SUM(CASE WHEN event_type = 'Withdraw' THEN CAST(amount AS NUMERIC) ELSE 0 END), 0)
         AS deposit_amount,
-        MIN(CASE WHEN event_type = 'Deposit' THEN ledger_closed_at END) AS first_deposit_at
+        MIN(CASE WHEN event_type = 'Deposit' THEN ledger_closed_at END) AS first_deposit_at,
+        MAX(CASE WHEN event_type = 'Deposit' THEN ledger_closed_at END) AS last_deposit_at
       FROM contract_events
       WHERE event_type IN ('Deposit', 'Withdraw')
         AND address = $1
@@ -113,6 +116,7 @@ export const getDepositorPortfolio = asyncHandler(
     const depositAmount = safeFloat(depositorResult.rows[0]?.deposit_amount);
     const poolTotal = safeFloat(poolTotalResult.rows[0]?.pool_total);
     const firstDepositAt = depositorResult.rows[0]?.first_deposit_at ?? null;
+    const lastDepositAt = depositorResult.rows[0]?.last_deposit_at ?? null;
 
     const sharePercent = poolTotal > 0 ? depositAmount / poolTotal : 0;
 
@@ -135,6 +139,7 @@ export const getDepositorPortfolio = asyncHandler(
         estimatedYield: parseFloat(estimatedYield.toFixed(7)),
         apy: ANNUAL_APY,
         firstDepositAt,
+        lastDepositAt,
       },
     });
   },

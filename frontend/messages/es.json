@@ -263,5 +263,8 @@
       "newDueDate": "Nueva fecha de vencimiento",
       "submit": "Construir, Firmar y Enviar"
     }
+  },
+  "Lend": {
+    "cooldownActive": "Retiro disponible en aproximadamente {minutes} minuto(s) mientras el enfriamiento está activo."
   }
 }

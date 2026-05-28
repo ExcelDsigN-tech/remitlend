@@ -1087,9 +1087,7 @@ impl LoanManager {
             .set(&borrower_loans_key, &borrower_loans);
         Self::bump_instance_ttl(&env);
 
-        events::loan_requested(&env, borrower.clone(), amount);
-        env.events()
-            .publish((symbol_short!("LoanReq"), borrower), loan_counter);
+        events::loan_requested(&env, loan_counter, borrower.clone(), amount);
         Ok(loan_counter)
     }
 
@@ -1423,10 +1421,7 @@ impl LoanManager {
         env.storage().persistent().set(&loan_key, &loan);
         Self::bump_persistent_ttl(&env, &loan_key);
 
-        env.events().publish(
-            (symbol_short!("ColDep"), loan_id, loan.borrower),
-            updated_collateral,
-        );
+        events::collateral_deposited(&env, loan.borrower.clone(), loan_id, updated_collateral);
 
         Ok(())
     }
@@ -1445,8 +1440,7 @@ impl LoanManager {
         }
 
         Self::release_collateral_internal(&env, loan_id, &loan.borrower);
-        env.events()
-            .publish((symbol_short!("ColRel"), loan_id, loan.borrower), ());
+        events::collateral_released(&env, loan.borrower, loan_id);
 
         Ok(())
     }
@@ -2010,7 +2004,7 @@ impl LoanManager {
             .unwrap_or(500);
         env.storage().instance().set(&DataKey::MinScore, &min_score);
         Self::bump_instance_ttl(&env);
-        events::min_score_updated(&env, old_score, min_score);
+        events::min_score_updated(&env, admin, old_score, min_score);
     }
 
     pub fn set_max_loan_amount(env: Env, amount: i128) -> Result<(), LoanError> {

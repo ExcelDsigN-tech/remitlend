@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -13,7 +13,7 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ErrorBoundary } from "../../components/global_ui/ErrorBoundary";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { YieldEarningsChart } from "../../components/charts/YieldEarningsChart";
@@ -53,8 +53,10 @@ function formatPercent(value: number) {
 
 export function LendPageClient() {
   const locale = useLocale();
+  const t = useTranslations("Lend");
   const [depositAmount, setDepositAmount] = useState("100");
   const [withdrawAmount, setWithdrawAmount] = useState("50");
+  const [cooldownRemainingSeconds, setCooldownRemainingSeconds] = useState(0);
   const address = useWalletStore(selectWalletAddress);
 
   const depositOp = useDepositOperation();
@@ -125,6 +127,32 @@ export function LendPageClient() {
       })),
     [yieldHistory],
   );
+
+  const cooldownLedgers = poolStats?.withdrawalCooldownLedgers ?? 0;
+  const cooldownSeconds = Math.max(0, cooldownLedgers) * 5;
+  const lastDepositTimestamp = depositor?.lastDepositAt
+    ? new Date(depositor.lastDepositAt).getTime()
+    : null;
+
+  useEffect(() => {
+    if (!lastDepositTimestamp || cooldownSeconds <= 0) {
+      setCooldownRemainingSeconds(0);
+      return;
+    }
+
+    const updateRemaining = () => {
+      const elapsed = Math.floor((Date.now() - lastDepositTimestamp) / 1000);
+      const remaining = Math.max(0, cooldownSeconds - elapsed);
+      setCooldownRemainingSeconds(remaining);
+    };
+
+    updateRemaining();
+    const intervalId = window.setInterval(updateRemaining, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [lastDepositTimestamp, cooldownSeconds]);
+
+  const isWithdrawCooldownActive = cooldownRemainingSeconds > 0;
+  const cooldownMinutes = Math.ceil(cooldownRemainingSeconds / 60);
 
   if (!address) {
     return (
@@ -397,12 +425,27 @@ export function LendPageClient() {
                   </p>
                   <button
                     type="submit"
-                    disabled={withdrawalOp.isLoading || !!withdrawPrecisionError}
+                    disabled={
+                      withdrawalOp.isLoading ||
+                      !!withdrawPrecisionError ||
+                      isWithdrawCooldownActive
+                    }
+                    aria-describedby={isWithdrawCooldownActive ? "withdraw-cooldown-help" : undefined}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                   >
                     <ArrowDownLeft className="h-4 w-4" />
                     {withdrawalOp.isLoading ? "Withdrawing..." : "Withdraw"}
                   </button>
+                  {isWithdrawCooldownActive ? (
+                    <p
+                      id="withdraw-cooldown-help"
+                      role="status"
+                      aria-live="polite"
+                      className="text-xs text-amber-700 dark:text-amber-300"
+                    >
+                      {t("cooldownActive", { minutes: cooldownMinutes })}
+                    </p>
+                  ) : null}
                   <OperationProgress transaction={withdrawalOp.transaction} type="withdrawal" />
                 </form>
               </div>

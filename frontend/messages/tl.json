@@ -263,5 +263,8 @@
       "newDueDate": "Bagong due date",
       "submit": "I-build, Pirmahan at Isumite"
     }
+  },
+  "Lend": {
+    "cooldownActive": "Available ang withdraw sa humigit-kumulang {minutes} minuto habang aktibo ang cooldown."
   }
 }

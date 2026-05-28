@@ -9,6 +9,8 @@ export const SUPPORTED_WEBHOOK_EVENT_TYPES = [
   "LoanDefaulted",
   "CollateralLiquidated",
   "CollateralReturned",
+  "CollateralDeposited",
+  "CollateralReleased",
   "ColDep",
   "ColRel",
   "LateFeeCharged",

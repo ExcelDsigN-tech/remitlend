@@ -1,7 +1,7 @@
 use soroban_sdk::{symbol_short, Address, Env, String, Symbol};
 
-pub fn loan_requested(env: &Env, borrower: Address, amount: i128) {
-    let topics = (Symbol::new(env, "LoanRequested"), borrower);
+pub fn loan_requested(env: &Env, loan_id: u32, borrower: Address, amount: i128) {
+    let topics = (Symbol::new(env, "LoanRequested"), loan_id, borrower);
     env.events().publish(topics, amount);
 }
 
@@ -61,9 +61,9 @@ pub fn late_fee_charged(env: &Env, loan_id: u32, fee_amount: i128) {
     env.events().publish(topics, fee_amount);
 }
 
-pub fn min_score_updated(env: &Env, old_score: u32, new_score: u32) {
-    env.events()
-        .publish((symbol_short!("MinScore"),), (old_score, new_score));
+pub fn min_score_updated(env: &Env, admin: Address, old_score: u32, new_score: u32) {
+    let topics = (Symbol::new(env, "MinScoreUpdated"), admin);
+    env.events().publish(topics, (old_score, new_score));
 }
 
 pub fn paused(env: &Env, paused_at_ledger: u32) {
@@ -109,6 +109,16 @@ pub fn rate_oracle_updated(env: &Env, old_oracle: Option<Address>, new_oracle: A
 pub fn collateral_returned(env: &Env, borrower: Address, loan_id: u32, amount: i128) {
     let topics = (Symbol::new(env, "CollateralReturned"), borrower, loan_id);
     env.events().publish(topics, amount);
+}
+
+pub fn collateral_deposited(env: &Env, borrower: Address, loan_id: u32, amount: i128) {
+    let topics = (Symbol::new(env, "CollateralDeposited"), borrower, loan_id);
+    env.events().publish(topics, amount);
+}
+
+pub fn collateral_released(env: &Env, borrower: Address, loan_id: u32) {
+    let topics = (Symbol::new(env, "CollateralReleased"), borrower, loan_id);
+    env.events().publish(topics, ());
 }
 
 pub fn late_fee_rate_updated(env: &Env, admin: Address, old_rate: u32, new_rate: u32) {

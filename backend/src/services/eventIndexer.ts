@@ -34,6 +34,8 @@ const EVENT_TYPE_ALIASES: Record<string, WebhookEventType> = {
   GovCncl: "ProposalCancelled",
   GovEmerg: "ProposalCancelled",
   GovExp: "ProposalCancelled",
+  ColDep: "CollateralDeposited",
+  ColRel: "CollateralReleased",
 };
 
 const ADMIN_CONFIG_EVENT_TYPES: ReadonlySet<WebhookEventType> = new Set([
@@ -649,9 +651,11 @@ export class EventIndexer {
     let termLedgers: number | undefined;
 
     if (type === "LoanRequested") {
-      // (type, borrower), amount
-      if (!event.topic[1]) return null;
-      address = this.decodeAddress(event.topic[1]);
+      // (type, loan_id, borrower), amount
+      if (!event.topic[1] || !event.topic[2]) return null;
+      loanId = this.decodeLoanId(event.topic[1]);
+      if (loanId === undefined) return null;
+      address = this.decodeAddress(event.topic[2]);
       amount = this.decodeAmount(event.value);
     } else if (type === "LoanApproved") {
       // (type, loan_id, borrower), [interest_rate_bps, term_ledgers]
@@ -782,7 +786,10 @@ export class EventIndexer {
         amount = data[1].toString();
       }
     } else if (type === "MinScoreUpdated") {
-      // (type), [old_score, new_score]
+      // (type, admin), [old_score, new_score]
+      if (event.topic[1]) {
+        address = this.decodeAddress(event.topic[1]);
+      }
       amount = this.decodeTupleSecondNumericValue(event.value);
     } else if (type === "InterestRateUpdated") {
       // (type), [old_rate, new_rate]
@@ -846,15 +853,15 @@ export class EventIndexer {
       address = this.decodeTupleSecondAddress(event.value);
     } else if (type === "PoolPaused" || type === "PoolUnpaused") {
       // (type)
-    } else if (type === "ColDep" || type === "ColRel") {
-      // (loan_id, borrower), amount
+    } else if (type === "CollateralDeposited" || type === "CollateralReleased") {
+      // (type, borrower, loan_id), amount/()
       if (event.topic[1]) {
-        loanId = this.decodeLoanId(event.topic[1]);
+        address = this.decodeAddress(event.topic[1]);
       }
       if (event.topic[2]) {
-        address = this.decodeAddress(event.topic[2]);
+        loanId = this.decodeLoanId(event.topic[2]);
       }
-      if (type === "ColDep") {
+      if (type === "CollateralDeposited") {
         amount = this.decodeAmount(event.value);
       }
     } else if (type === "ScoreDecr") {

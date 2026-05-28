@@ -263,5 +263,8 @@
       "newDueDate": "New due date",
       "submit": "Build, Sign & Submit"
     }
+  },
+  "Lend": {
+    "cooldownActive": "Withdraw available in about {minutes} minute(s) while cooldown is active."
   }
 }

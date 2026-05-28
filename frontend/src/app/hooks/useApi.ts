@@ -403,6 +403,7 @@ export interface PoolStats {
   apy: number;
   activeLoansCount: number;
   poolTokenAddress?: string;
+  withdrawalCooldownLedgers?: number;
 }
 
 export interface DepositorPortfolio {
@@ -412,6 +413,7 @@ export interface DepositorPortfolio {
   estimatedYield: number;
   apy: number;
   firstDepositAt: string | null;
+  lastDepositAt?: string | null;
 }
 
 export interface LoanStats {

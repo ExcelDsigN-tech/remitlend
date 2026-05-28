@@ -1103,6 +1103,48 @@ class SorobanService {
     return balance;
   }
 
+  async getWithdrawalCooldownLedgers(): Promise<number> {
+    const server = this.getRpcServer();
+    const poolId = this.getLendingPoolContractId();
+    const passphrase = this.getNetworkPassphrase();
+    const source = this.getScoreReadSourceKeypair();
+
+    const account = await server.getAccount(source.publicKey());
+    const tx = new TransactionBuilder(account, {
+      fee: BASE_FEE,
+      networkPassphrase: passphrase,
+    })
+      .addOperation(
+        Operation.invokeContractFunction({
+          contract: poolId,
+          function: "get_withdrawal_cooldown",
+          args: [],
+        }),
+      )
+      .setTimeout(30)
+      .build();
+
+    const simulation = await server.simulateTransaction(tx);
+    if ("error" in simulation) {
+      throw AppError.internal(
+        `Failed to simulate get_withdrawal_cooldown: ${simulation.error}`,
+      );
+    }
+
+    const retval = simulation.result?.retval;
+    if (!retval) {
+      throw AppError.internal("No withdrawal cooldown returned by lending pool");
+    }
+
+    const nativeCooldown = scValToNative(retval);
+    const cooldown = Number(nativeCooldown);
+    if (!Number.isFinite(cooldown)) {
+      throw AppError.internal("Invalid withdrawal cooldown returned");
+    }
+
+    return cooldown;
+  }
+
   /**
    * Returns score adjustment constants for indexing.
    * Values are sourced from environment variables so they stay in sync

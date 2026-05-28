@@ -1,8 +1,6 @@
 import { query } from "../db/connection.js";
 import logger from "../utils/logger.js";
 import type { Response } from "express";
-import twilio from "twilio";
-import sgMail from "@sendgrid/mail";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,17 +51,28 @@ export interface NotificationPreferences {
 type SseClient = Response;
 const sseClients = new Map<string, Set<SseClient>>();
 
-// Initialize Twilio client if credentials are provided
-const twilioClient =
-  process.env.TWILIO_ACCOUNT_SID &&
-  process.env.TWILIO_AUTH_TOKEN &&
-  process.env.TWILIO_PHONE_NUMBER
-    ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
-    : null;
+// Lazy-init Twilio client — dynamic import avoids ESM/CJS interop issues in tests
+async function getTwilioClient() {
+  if (
+    !process.env.TWILIO_ACCOUNT_SID ||
+    !process.env.TWILIO_AUTH_TOKEN ||
+    !process.env.TWILIO_PHONE_NUMBER
+  ) {
+    return null;
+  }
+  const { default: twilio } = await import("twilio");
+  return twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+}
 
-// Configure SendGrid if API key is present
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Lazy-init SendGrid — called once on first sendEmail
+let _sgInitialized = false;
+async function ensureSendGrid() {
+  if (_sgInitialized) return;
+  _sgInitialized = true;
+  if (process.env.SENDGRID_API_KEY) {
+    const sgMail = await import("@sendgrid/mail");
+    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+  }
 }
 
 function buildEmailTemplate(
@@ -108,7 +117,16 @@ async function sendEmail(
 ): Promise<void> {
   const fromEmail = process.env.FROM_EMAIL;
 
-  if (!process.env.SENDGRID_API_KEY || !fromEmail) {
+  if (!fromEmail) {
+    logger.info(
+      `[Email] FROM_EMAIL not set. Would send to ${email}: ${message}`,
+    );
+    return;
+  }
+
+  await ensureSendGrid();
+
+  if (!process.env.SENDGRID_API_KEY) {
     logger.info(
       `[Email] SendGrid not configured. Would send to ${email}: ${message}`,
     );
@@ -120,7 +138,8 @@ async function sendEmail(
     : { subject: "Notification from RemitLend", html: `<p>${message}</p>` };
 
   try {
-    await sgMail.send({
+    const sgMail = await import("@sendgrid/mail");
+    await sgMail.default.send({
       to: email,
       from: fromEmail,
       subject: template.subject,
@@ -136,6 +155,7 @@ async function sendEmail(
 }
 
 async function sendSMS(phone: string, message: string) {
+  const twilioClient = await getTwilioClient();
   if (!twilioClient || !process.env.TWILIO_PHONE_NUMBER) {
     logger.warn(
       `[SMS] Twilio not configured. Would send to ${phone}: ${message}`,

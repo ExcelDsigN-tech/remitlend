@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "audit:a11y": "next build && npx axe-playwright",
     "format": "prettier --write .",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "prepare": "husky"
   },

@@ -10,7 +10,7 @@ export function isValidStellarAddress(address: string): boolean {
   // Stellar public keys are exactly 56 characters, start with 'G'
   if (address.length !== 56 || !address.startsWith("G")) return false;
   // Check if it's valid base32 (only contains alphanumeric characters)
-  return /^G[A-Z2-7]{54}$/.test(address);
+  return /^G[A-Z2-7]{55}$/.test(address);
 }
 
 export function getTxUrl(txHash: string): string {

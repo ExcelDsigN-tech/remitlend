@@ -252,9 +252,8 @@ describe("useThemeStore", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
-  it("toggles between light and dark themes", () => {
-    useThemeStore.setState({ theme: "dark", hydrated: true });
-    document.documentElement.classList.add("dark");
+  it("cycles through light → dark → system → light when toggled", () => {
+    useThemeStore.setState({ theme: "system", hydrated: true });
 
     useThemeStore.getState().toggleTheme();
 

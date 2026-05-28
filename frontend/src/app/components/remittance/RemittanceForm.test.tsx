@@ -20,9 +20,10 @@ jest.mock("../../hooks/useTransactionPreview", () => ({
   useTransactionPreview: jest.fn(() => ({
     isOpen: false,
     show: jest.fn(),
-    hide: jest.fn(),
-    data: {},
-    onConfirm: jest.fn(),
+    close: jest.fn(),
+    confirm: jest.fn(),
+    data: null,
+    isLoading: false,
   })),
 }));
 
@@ -32,6 +33,9 @@ jest.mock("sonner", () => ({
     success: jest.fn(),
   },
 }));
+
+// A valid 56-character Stellar address using only base32 chars (A-Z, 2-7)
+const VALID_ADDRESS = "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIBTLFL2F7HVRQG5LDHNWY2QTWA";
 
 describe("RemittanceForm", () => {
   const mockOnSuccess = jest.fn();
@@ -47,14 +51,11 @@ describe("RemittanceForm", () => {
     expect(screen.getByPlaceholderText("0.00")).toBeInTheDocument();
   });
 
-  it("should show error when recipient address is empty", async () => {
+  it("should show error when recipient address is empty", () => {
     render(<RemittanceForm onSuccess={mockOnSuccess} />);
-    const reviewButton = screen.getByText("Review & Send");
-    fireEvent.click(reviewButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Recipient address is required")).toBeInTheDocument();
-    });
+    // The form disables the button when the address or amount field is empty
+    const reviewButton = screen.getByRole("button", { name: /review/i });
+    expect(reviewButton).toBeDisabled();
   });
 
   it("should show error for invalid Stellar address", async () => {
@@ -62,9 +63,12 @@ describe("RemittanceForm", () => {
     render(<RemittanceForm onSuccess={mockOnSuccess} />);
 
     const addressInput = screen.getByPlaceholderText("G... (Stellar public key)");
-    await user.type(addressInput, "INVALID123");
+    const amountInput = screen.getByPlaceholderText("0.00");
 
-    const reviewButton = screen.getByText("Review & Send");
+    await user.type(addressInput, "INVALID123");
+    await user.type(amountInput, "100");
+
+    const reviewButton = screen.getByRole("button", { name: /review/i });
     fireEvent.click(reviewButton);
 
     await waitFor(() => {
@@ -77,27 +81,24 @@ describe("RemittanceForm", () => {
     render(<RemittanceForm onSuccess={mockOnSuccess} />);
 
     const addressInput = screen.getByPlaceholderText("G... (Stellar public key)");
-    await user.type(addressInput, "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIBTLFL2F7HVRQG5LDHNWY2QTW");
+    await user.type(addressInput, VALID_ADDRESS);
 
-    const reviewButton = screen.getByText("Review & Send");
-    fireEvent.click(reviewButton);
-
-    await waitFor(() => {
-      expect(screen.getByText("Amount is required")).toBeInTheDocument();
-    });
+    // Button is disabled when amount is not yet filled
+    const reviewButton = screen.getByRole("button", { name: /review/i });
+    expect(reviewButton).toBeDisabled();
   });
 
-  it("should show error for negative amount", async () => {
+  it("should show error for amount that is not greater than zero", async () => {
     const user = userEvent.setup();
     render(<RemittanceForm onSuccess={mockOnSuccess} />);
 
     const addressInput = screen.getByPlaceholderText("G... (Stellar public key)");
-    await user.type(addressInput, "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIBTLFL2F7HVRQG5LDHNWY2QTW");
+    await user.type(addressInput, VALID_ADDRESS);
 
     const amountInput = screen.getByPlaceholderText("0.00");
-    await user.type(amountInput, "-100");
+    await user.type(amountInput, "0");
 
-    const reviewButton = screen.getByText("Review & Send");
+    const reviewButton = screen.getByRole("button", { name: /review/i });
     fireEvent.click(reviewButton);
 
     await waitFor(() => {
@@ -109,13 +110,21 @@ describe("RemittanceForm", () => {
     const user = userEvent.setup();
     render(<RemittanceForm onSuccess={mockOnSuccess} />);
 
+    const addressInput = screen.getByPlaceholderText("G... (Stellar public key)");
+    const amountInput = screen.getByPlaceholderText("0.00");
+
+    await user.type(addressInput, VALID_ADDRESS);
+    await user.type(amountInput, "100");
+
     const memoInput = screen.getByPlaceholderText(
       "Add a note for the recipient (max 28 characters)",
     );
-    const longMemo = "This is a very long memo that exceeds the limit";
-    await user.type(memoInput, longMemo);
+    // Use fireEvent.change to bypass the textarea's maxLength attribute
+    fireEvent.change(memoInput, {
+      target: { value: "This is a very long memo that exceeds the limit" },
+    });
 
-    const reviewButton = screen.getByText("Review & Send");
+    const reviewButton = screen.getByRole("button", { name: /review/i });
     fireEvent.click(reviewButton);
 
     await waitFor(() => {
@@ -162,10 +171,11 @@ describe("RemittanceForm", () => {
       "G... (Stellar public key)",
     ) as HTMLInputElement;
     const amountInput = screen.getByPlaceholderText("0.00") as HTMLInputElement;
-    const reviewButton = screen.getByText("Review & Send") as HTMLButtonElement;
+    // When isPending, the button renders a "Processing..." spinner instead of "Review & Send"
+    const submitButton = screen.getByRole("status").closest("button") as HTMLButtonElement;
 
     expect(addressInput.disabled).toBe(true);
     expect(amountInput.disabled).toBe(true);
-    expect(reviewButton.disabled).toBe(true);
+    expect(submitButton.disabled).toBe(true);
   });
 });

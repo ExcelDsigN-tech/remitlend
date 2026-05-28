@@ -3,12 +3,12 @@ import { isValidStellarAddress } from "./stellar";
 describe("Stellar Utilities", () => {
   describe("isValidStellarAddress", () => {
     it("should validate a correct Stellar address", () => {
-      const validAddress = "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIBTLFL2F7HVRQG5LDHNWY2QTW";
+      const validAddress = "GBUQWP3BOUZX34ULNQG23RQ6F4BVWCIBTLFL2F7HVRQG5LDHNWY2QTWA";
       expect(isValidStellarAddress(validAddress)).toBe(true);
     });
 
     it("should validate another correct Stellar address", () => {
-      const validAddress = "GBHVTBKMJ5PXJW7VDBLCWVYXCXU6BFJFNX4S3HJQEWQYXU2CKFCW4F";
+      const validAddress = "GBHVTBKMJ5PXJW7VDBLCWVYXCXU6BFJFNX4S3HJQEWQYXU2CKFCW4FAA";
       expect(isValidStellarAddress(validAddress)).toBe(true);
     });
 

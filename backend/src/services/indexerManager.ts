@@ -13,12 +13,24 @@ export const startIndexer = (): void => {
     return;
   }
 
-  const contractIds = [
-    process.env.LOAN_MANAGER_CONTRACT_ID,
-    process.env.LENDING_POOL_CONTRACT_ID,
-    process.env.REMITTANCE_NFT_CONTRACT_ID,
-    process.env.MULTISIG_GOVERNANCE_CONTRACT_ID,
-  ].filter((id): id is string => Boolean(id && id.trim().length > 0));
+  const contractEnvMap: Record<string, string | undefined> = {
+    LOAN_MANAGER_CONTRACT_ID: process.env.LOAN_MANAGER_CONTRACT_ID,
+    LENDING_POOL_CONTRACT_ID: process.env.LENDING_POOL_CONTRACT_ID,
+    REMITTANCE_NFT_CONTRACT_ID: process.env.REMITTANCE_NFT_CONTRACT_ID,
+    MULTISIG_GOVERNANCE_CONTRACT_ID: process.env.MULTISIG_GOVERNANCE_CONTRACT_ID,
+  };
+
+  for (const [envVar, value] of Object.entries(contractEnvMap)) {
+    if (!value || value.trim().length === 0) {
+      logger.warn(
+        `${envVar} is not set — events for that contract will not be indexed`,
+      );
+    }
+  }
+
+  const contractIds = Object.values(contractEnvMap).filter(
+    (id): id is string => Boolean(id && id.trim().length > 0),
+  );
   const pollIntervalMs = parseInt(
     process.env.INDEXER_POLL_INTERVAL_MS || "30000",
   );

@@ -16,9 +16,9 @@ This document lists every environment variable used by the RemitLend platform. E
 | `STELLAR_RPC_URL` | ✓ | ✓ | ✓ | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint | `backend/src/config/stellar.ts` |
 | `STELLAR_NETWORK_PASSPHRASE` | ✓ | ✓ | ✓ | `Test SDF Network ; September 2015` | Network passphrase for transaction signing | `backend/src/config/stellar.ts` |
 | `LOAN_MANAGER_CONTRACT_ID` | ✓ | ✓ | ✓ | — | Deployed loan manager contract address | `backend/src/config/stellar.ts` |
-| `REMITTANCE_NFT_CONTRACT_ID` | — | ✓ | ✓ | — | Deployed remittance NFT contract address | `backend/src/config/contracts.ts` |
+| `REMITTANCE_NFT_CONTRACT_ID` | ✓ | ✓ | ✓ | — | Deployed remittance NFT contract address | `backend/src/config/contracts.ts` |
 | `LENDING_POOL_CONTRACT_ID` | ✓ | ✓ | ✓ | — | Deployed lending pool contract address | `backend/src/config/stellar.ts` |
-| `MULTISIG_GOVERNANCE_CONTRACT_ID` | — | ✓ | ✓ | — | Deployed multisig governance contract address | `backend/src/config/contracts.ts` |
+| `MULTISIG_GOVERNANCE_CONTRACT_ID` | ✓ | ✓ | ✓ | — | Deployed multisig governance contract address | `backend/src/config/contracts.ts` |
 | `POOL_TOKEN_ADDRESS` | ✓ | ✓ | ✓ | — | Pool token contract address | `backend/src/config/stellar.ts` |
 | `STELLAR_USDC_ISSUER` | — | ✓ | ✓ | — | USDC asset issuer address | `backend/src/config/stellar.ts` |
 | `STELLAR_EURC_ISSUER` | — | ✓ | ✓ | — | EURC asset issuer address | `backend/src/config/stellar.ts` |

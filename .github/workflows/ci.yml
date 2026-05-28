@@ -62,6 +62,8 @@ jobs:
           STELLAR_NETWORK_PASSPHRASE: Test SDF Network ; September 2015
           LOAN_MANAGER_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
           LENDING_POOL_CONTRACT_ID: CBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+          REMITTANCE_NFT_CONTRACT_ID: CDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+          MULTISIG_GOVERNANCE_CONTRACT_ID: CEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
           POOL_TOKEN_ADDRESS: CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
           LOAN_MANAGER_ADMIN_SECRET: test_admin_secret
           INTERNAL_API_KEY: test_internal_api_key
@@ -87,6 +89,11 @@ jobs:
       - name: Type check
         run: npm run typecheck
         working-directory: frontend
+      - name: Unit tests
+        run: npm test
+        working-directory: frontend
+        env:
+          NODE_ENV: test
       - name: Build
         run: npm run build
         working-directory: frontend

@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { Clock, ArrowUpRight, ArrowDownLeft, ExternalLink } from "lucide-react";
 import { useWalletStore, selectIsWalletConnected } from "../../stores/useWalletStore";
 import { useLoans, useRemittances } from "../../hooks/useApi";
-import { EmptyState } from "../../components/ui/EmptyState";
 import { ErrorBoundary } from "../../components/global_ui/ErrorBoundary";
 import { StatusIndicator } from "../../components/ui/StatusIndicator";
 import { EmptyState } from "../../components/ui/EmptyState";

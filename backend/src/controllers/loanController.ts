@@ -58,6 +58,97 @@ export const createTestLoan = asyncHandler(
   },
 );
 
+
+export const buildCancelLoanTx = async (
+  req,
+  res,
+  next,
+) => {
+  try {
+    const { loanId } = req.params;
+
+    const borrower =
+      req.user.publicKey;
+
+    const loan =
+      await loanService.getLoanById(loanId);
+
+    if (!loan) {
+      return res.status(404).json({
+        message: 'Loan not found',
+      });
+    }
+
+    if (
+      !['PENDING', 'OPEN'].includes(
+        loan.status,
+      )
+    ) {
+      return res.status(400).json({
+        message:
+          'Loan cannot be cancelled',
+      });
+    }
+
+    const transaction =
+      await sorobanService.buildCancelLoanTx(
+        borrower,
+        loanId,
+      );
+
+    return res.json({
+      success: true,
+      transaction,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const buildRejectLoanTx = async (
+  req,
+  res,
+  next,
+) => {
+  try {
+    const { loanId } = req.params;
+
+    const { reason } =
+      rejectLoanSchema.parse(req.body);
+
+    const loan =
+      await loanService.getLoanById(loanId);
+
+    if (!loan) {
+      return res.status(404).json({
+        message: 'Loan not found',
+      });
+    }
+
+    if (
+      loan.status !== 'PENDING'
+    ) {
+      return res.status(400).json({
+        message:
+          'Loan cannot be rejected',
+      });
+    }
+
+    const transaction =
+      await sorobanService.buildRejectLoanTx(
+        req.user.publicKey,
+        loanId,
+        reason,
+      );
+
+    return res.json({
+      success: true,
+      transaction,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 /**
  * POST /api/loans/:loanId/mark-defaulted (TEST/DEV ONLY)
  * Helper endpoint to mark a loan as defaulted for test setup.

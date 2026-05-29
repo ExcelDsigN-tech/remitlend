@@ -27,8 +27,8 @@ class SoundManager {
   }
 
   private initializeSounds() {
-    // Using data URIs for simple sound effects to avoid external dependencies
-    // In production, replace with actual audio files
+     // Placeholder silent sound effects.
+// Replace with real audio assets or generated tones in production.
 
     const soundEffects: Record<SoundEffect, string> = {
       // Level up - triumphant sound
@@ -65,15 +65,17 @@ class SoundManager {
   }
 
   /**
-   * Generate a simple tone using Web Audio API
-   * This creates a data URI that can be used as an audio source
-   */
-  private generateTone(_frequencies: number[], _duration: number): string {
-    // For now, return empty data URI
-    // In a real implementation, you would generate actual audio data
-    // or use external audio files
-    return "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
-  }
+ * Placeholder sound generator.
+ *
+ * Gamification sound effects are currently disabled and all generated
+ * clips are intentionally silent placeholders until real audio assets
+ * or Web Audio API tone generation is implemented.
+ *
+ * The frequency and duration parameters are currently unused.
+ */
+private generateTone(_frequencies: number[], _duration: number): string {
+  return "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+}
 
   /**
    * Play a sound effect

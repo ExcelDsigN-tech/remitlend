@@ -8,6 +8,12 @@ export const buildPoolTransactionSchema = z.object({
   amount: positiveAmountSchema,
 });
 
+export const emergencyWithdrawSchema = z.object({
+  depositorPublicKey: stellarAddressSchema,
+  token: stellarAddressSchema,
+  shares: positiveAmountSchema,
+});
+
 export const getDepositorYieldHistorySchema = z.object({
   params: z.object({
     address: stellarAddressSchema,

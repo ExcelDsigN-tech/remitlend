@@ -2,24 +2,64 @@ import { query } from "../db/connection.js";
 import { AppError } from "../errors/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { notificationService } from "../services/notificationService.js";
+import {
+  parseCursorQueryParams,
+  createCursorPaginatedResponse,
+} from "../utils/pagination.js";
 
 /**
- * List all open loan disputes for admin review
+ * List all loan disputes for admin review with cursor-based pagination.
+ * Defaults to "open" status, orders newest-first by created_at.
  */
 export const listLoanDisputes = asyncHandler(async (req, res) => {
-  const status = (req.query.status as string | undefined) ?? "open";
-  if (!["open", "resolved", "rejected", "all"].includes(status)) {
+  const { limit, cursor, status } = parseCursorQueryParams(req);
+  const statusFilter = status ?? "open";
+
+  if (statusFilter !== "open" && statusFilter !== "resolved" && statusFilter !== "rejected" && statusFilter !== "all") {
     throw AppError.badRequest("Invalid status filter");
   }
 
-  const result =
-    status === "all"
-      ? await query(`SELECT * FROM loan_disputes ORDER BY created_at ASC`, [])
-      : await query(
-          `SELECT * FROM loan_disputes WHERE status = $1 ORDER BY created_at ASC`,
-          [status],
-        );
-  res.json({ success: true, disputes: result.rows });
+  const values: unknown[] = [];
+  let whereClause = "";
+
+  if (statusFilter !== "all") {
+    values.push(statusFilter);
+    whereClause = `WHERE status = $${values.length}`;
+  }
+
+  if (cursor) {
+    values.push(cursor);
+    whereClause += whereClause
+      ? ` AND created_at < $${values.length}`
+      : `WHERE created_at < $${values.length}`;
+  }
+
+  const queryLimit = limit + 1;
+  values.push(queryLimit);
+
+  const result = await query(
+    `SELECT * FROM loan_disputes${whereClause} ORDER BY created_at DESC LIMIT $${values.length}`,
+    values,
+  );
+
+  const rows = result.rows;
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor =
+    hasMore && pageRows.length > 0
+      ? new Date(pageRows[pageRows.length - 1]!.created_at).toISOString()
+      : null;
+
+  res.json(
+    createCursorPaginatedResponse(
+      pageRows,
+      null,
+      limit,
+      pageRows.length,
+      nextCursor,
+      cursor !== null,
+    ),
+  );
 });
 
 /**

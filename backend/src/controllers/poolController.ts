@@ -4,6 +4,7 @@ import { withStellarAndDbTransaction } from "../db/transaction.js";
 import { AppError } from "../errors/AppError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sorobanService } from "../services/sorobanService.js";
+import { cacheService } from "../services/cacheService.js";
 import {
   buildDepositorYieldHistory,
   computeApy,
@@ -14,6 +15,16 @@ import {
   invalidateOnDeposit,
   invalidateOnWithdraw,
 } from "../utils/cacheKeys.js";
+
+/**
+ * The on-chain share price is scaled by SHARE_PRICE_SCALE (1,000,000 = 1.0).
+ * Divide the raw value by this constant to obtain the human-readable ratio.
+ */
+const SHARE_PRICE_SCALE = 1_000_000;
+
+/** Cache TTL for share price reads (30 seconds). Brief because price can move
+ *  each ledger, but long enough to absorb burst requests on the same block. */
+const SHARE_PRICE_CACHE_TTL_SECONDS = 30;
 
 const ANNUAL_APY = 0.08; // 8% annual yield paid to depositors
 
@@ -302,6 +313,50 @@ export const withdrawFromPool = asyncHandler(
 );
 
 /**
+ * POST /api/pool/build-emergency-withdraw
+ * Build an unsigned LendingPool emergency_withdraw transaction.
+ */
+export const emergencyWithdrawFromPool = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { depositorPublicKey, token, shares } = req.body as {
+      depositorPublicKey: string;
+      token: string;
+      shares: number;
+    };
+
+    if (!depositorPublicKey || !token || !shares || shares <= 0) {
+      throw AppError.badRequest(
+        "depositorPublicKey, token, and a positive shares amount are required",
+      );
+    }
+
+    if (depositorPublicKey !== req.user?.publicKey) {
+      throw AppError.forbidden(
+        "depositorPublicKey must match your authenticated wallet",
+      );
+    }
+
+    const result = await sorobanService.buildEmergencyWithdrawTx(
+      depositorPublicKey,
+      token,
+      shares,
+    );
+
+    logger.info("Emergency withdraw transaction built", {
+      depositor: depositorPublicKey,
+      token,
+      shares,
+    });
+
+    res.json({
+      success: true,
+      unsignedTxXdr: result.unsignedTxXdr,
+      networkPassphrase: result.networkPassphrase,
+    });
+  },
+);
+
+/**
  * POST /api/pool/submit
  * Submit a signed pool transaction to the Stellar network.
  */
@@ -359,6 +414,49 @@ export const submitPoolTransaction = asyncHandler(
       ...(result.stellarResult.resultXdr
         ? { resultXdr: result.stellarResult.resultXdr }
         : {}),
+    });
+  },
+);
+
+/**
+ * GET /api/pool/:token/share-price
+ * Returns the current on-chain share price for the given token.
+ * Cached briefly to absorb burst requests.
+ */
+export const getPoolSharePrice = asyncHandler(
+  async (req: Request, res: Response) => {
+    const token = req.params.token as string;
+
+    if (!token) {
+      throw AppError.badRequest("Token address is required");
+    }
+
+    const cacheKey = `pool:share-price:${token}`;
+    const cached = await cacheService.get<{
+      sharePrice: number;
+      sharePriceRatio: number;
+    }>(cacheKey);
+
+    if (cached !== null) {
+      res.json({
+        success: true,
+        data: cached,
+        cached: true,
+      });
+      return;
+    }
+
+    const sharePrice = await sorobanService.getSharePrice(token);
+    const sharePriceRatio = sharePrice / SHARE_PRICE_SCALE;
+
+    const data = { sharePrice, sharePriceRatio };
+
+    await cacheService.set(cacheKey, data, SHARE_PRICE_CACHE_TTL_SECONDS);
+
+    res.json({
+      success: true,
+      data,
+      cached: false,
     });
   },
 );

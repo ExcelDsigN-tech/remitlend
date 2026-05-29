@@ -1783,3 +1783,89 @@ export function useAdminGovernancePending() {
     queryFn: () => apiFetch<GovernancePendingResponse>("/admin/governance/pending"),
   });
 }
+
+
+export function useDepositCollateral() {
+  const api = useApiClient();
+  const { signAndSubmit } = useWallet();
+  const toast = useContractToast();
+
+  return useMutation({
+    mutationFn: async ({
+      loanId,
+      amount,
+    }: {
+      loanId: string;
+      amount: string;
+    }) => {
+      const tx =
+        await api.loans.buildDepositCollateralTx(
+          loanId,
+          amount,
+        );
+
+      const signedTx =
+        await signAndSubmit(tx);
+
+      return api.transactions.submit(
+        signedTx.hash,
+      );
+    },
+
+    onSuccess: () => {
+      toast.success(
+        'Collateral deposited successfully',
+      );
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error.message ??
+          'Failed to deposit collateral',
+      );
+    },
+  });
+}
+
+export function useReleaseCollateral() {
+  const api = useApiClient();
+  const { signAndSubmit } = useWallet();
+  const toast = useContractToast();
+
+  return useMutation({
+    mutationFn: async ({
+      loanId,
+      amount,
+    }: {
+      loanId: string;
+      amount: string;
+    }) => {
+      const tx =
+        await api.loans.buildReleaseCollateralTx(
+          loanId,
+          amount,
+        );
+
+      const signedTx =
+        await signAndSubmit(tx);
+
+      return api.transactions.submit(
+        signedTx.hash,
+      );
+    },
+
+    onSuccess: () => {
+      toast.success(
+        'Collateral released successfully',
+      );
+    },
+
+    onError: (error: any) => {
+      toast.error(
+        error.message ??
+          'Failed to release collateral',
+      );
+    },
+  });
+}
+

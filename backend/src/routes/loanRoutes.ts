@@ -48,6 +48,14 @@ import {
   liquidateLoanSchema,
   borrowerLoansQuerySchema,
 } from "../schemas/loanSchemas.js";
+import {
+  authenticateJWT,
+} from '../middleware/jwtAuth';
+
+import { requireJwtAuth } from "../middleware/jwtAuth.js";
+
+import { buildCancelLoanTx } from "../controllers/loanController.js";
+
 
 const router = Router();
 
@@ -77,6 +85,61 @@ if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {
 }
 
 router.get("/config", getLoanConfigEndpoint);
+
+/**
+ * @swagger
+ * /loans/{loanId}/build-cancel:
+ *   post:
+ *     summary: Build cancel loan transaction
+ *     tags:
+ *       - Loans
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: loanId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Transaction built successfully
+ */
+
+/**
+ * @swagger
+ * /admin/loans/{loanId}/build-reject:
+ *   post:
+ *     summary: Build reject loan transaction
+ *     tags:
+ *       - Admin Loans
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reason
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 minLength: 5
+ *                 maxLength: 500
+ *     responses:
+ *       200:
+ *         description: Reject transaction built
+ */
+
+
+router.post(
+  '/:loanId/build-cancel',
+  authenticateJWT,
+  requireLoanOwner,
+  buildCancelLoanTx,
+);
 
 router.post(
   "/amortization-preview",

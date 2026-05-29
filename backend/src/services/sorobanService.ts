@@ -16,6 +16,7 @@ import {
   getStellarRpcUrl,
 } from "../config/stellar.js";
 
+
 /**
  * Service for building and submitting Soroban contract transactions.
  * Handles the transaction lifecycle: build → (frontend signs) → submit.
@@ -32,6 +33,38 @@ class SorobanService {
     const result = await this.healthCheck();
     return result.connected ? "ok" : "error";
   }
+
+  async buildCancelLoanTx(
+  borrower: string,
+  loanId: string,
+) {
+  const contract = this.getLoanManagerContract();
+
+  const tx = await contract.call(
+    'cancel_loan',
+    borrower,
+    loanId,
+  );
+
+  return this.serializeTransaction(tx);
+}
+
+async buildRejectLoanTx(
+  adminPublicKey: string,
+  loanId: string,
+  reason: string,
+) {
+  const contract = this.getLoanManagerContract();
+
+  const tx = await contract.call(
+    'reject_loan',
+    adminPublicKey,
+    loanId,
+    reason,
+  );
+
+  return this.serializeTransaction(tx);
+}
 
   private getNetworkPassphrase(): string {
     return getStellarNetworkPassphrase();
@@ -1263,6 +1296,7 @@ class SorobanService {
       latePenalty: process.env.SCORE_DELTA_LATE ?? "5",
     });
   }
+  
 }
 
 export const sorobanService = new SorobanService();

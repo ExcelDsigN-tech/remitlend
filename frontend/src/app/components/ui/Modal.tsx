@@ -9,7 +9,7 @@ import { useModalFocusTrap } from "../../hooks/useModalFocusTrap";
 
 import { cn } from "@/app/utils/cn";
 
-interface ModalProps {
+ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;

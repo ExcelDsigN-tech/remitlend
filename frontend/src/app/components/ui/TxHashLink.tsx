@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { getTxUrl, truncateHash } from "../../utils/stellar";
+import { COPY_FEEDBACK_RESET_MS } from "../../constants/ui";
 
 interface TxHashLinkProps {
   txHash: string;
@@ -15,8 +16,12 @@ export function TxHashLink({ txHash, chars = 8, className = "" }: TxHashLinkProp
 
   async function handleCopy() {
     await navigator.clipboard.writeText(txHash);
+
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, COPY_FEEDBACK_RESET_MS);
   }
 
   return (
